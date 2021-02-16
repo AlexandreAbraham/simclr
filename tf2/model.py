@@ -225,12 +225,9 @@ class SupervisedHead(tf.keras.layers.Layer):
 class Model(tf.keras.models.Model):
   """Resnet model with projection or supervised layer."""
 
-  def __init__(self, num_classes, projection_head, supervised_head, **kwargs):
+  def __init__(self, num_classes, base_model, projection_head, supervised_head, **kwargs):
     super(Model, self).__init__(**kwargs)
-    self.resnet_model = resnet.resnet(
-        resnet_depth=FLAGS.resnet_depth,
-        width_multiplier=FLAGS.width_multiplier,
-        cifar_stem=FLAGS.image_size <= 32)
+    self.base_model = base_model
     self._projection_head = projection_head
     self.supervised_head = supervised_head
 
@@ -254,7 +251,7 @@ class Model(tf.keras.models.Model):
     features = tf.concat(features_list, 0)  # (num_transforms * bsz, h, w, c)
 
     # Base network forward pass.
-    hiddens = self.resnet_model(features, training=training)
+    hiddens = self.base_model(features, training=training)
 
     # Add heads.
     projection_head_outputs, supervised_head_inputs = self._projection_head(

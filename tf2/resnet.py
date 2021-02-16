@@ -526,7 +526,11 @@ class BlockGroup(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
     return tf.identity(inputs, self._name)
 
 
-class Resnet(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
+class BaseModel(tf.keras.layers.Layer):
+  pass
+
+
+class Resnet(BaseModel):  # pylint: disable=missing-docstring
 
   def __init__(self,
                block_fn,

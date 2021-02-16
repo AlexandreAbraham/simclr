@@ -528,8 +528,12 @@ def main(argv):
       FLAGS.proj_out_dim,
     ) 
     supervised_head = model_lib.SupervisedHead(num_classes)
+    resnet_model = resnet.resnet(
+        resnet_depth=FLAGS.resnet_depth,
+        width_multiplier=FLAGS.width_multiplier,
+        cifar_stem=FLAGS.image_size <= 32)
 
-    model = model_lib.Model(num_classes, projection_head, supervised_head)
+    model = model_lib.Model(num_classes, resnet_model, projection_head, supervised_head)
 
   if FLAGS.mode == 'eval':
     for ckpt in tf.train.checkpoints_iterator(
