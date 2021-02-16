@@ -31,6 +31,23 @@ import tensorflow_datasets as tfds
 
 
 
+# Modes and training.
+#
+# Here are the options:
+# - mode is train, eval, or train_and_eval
+# - train_mode is pretrain, or finetune
+# - lineareval_while_pretraining is True of False
+# - fine_tune_after_block, -1 means finetuning everything, 0 means after stem block, 4 is just the linear head.
+
+# First pass must be train + pretrain. lineareval_while_pretraining allows to start finetuning the supervised head during pretraining.
+#   Note that the training of the supervised head is not allowed to backpropagate to the base model.
+# Second pass is finetuning. Train + finetune. Finetuning trains the supervised head but the option fine_tune_after_block allows to also
+#   finetune the base network.
+
+# I hear you asking "What if I use finetune and lineareval_while_pretraining?" Then it is equivalent to using only finetune.
+# In eval mode, nothing is trainable.
+
+
 FLAGS = flags.FLAGS
 
 
@@ -505,7 +522,13 @@ def main(argv):
                  strategy.num_replicas_in_sync)
 
   with strategy.scope():
-    model = model_lib.Model(num_classes)
+
+    projection_head = model_lib.NonLinearProjectionHead
+      FLAGS.num_proj_layers,
+      FLAGS.proj_out_dim,
+    ) 
+
+    model = model_lib.Model(num_classes, projection_head)
 
   if FLAGS.mode == 'eval':
     for ckpt in tf.train.checkpoints_iterator(
