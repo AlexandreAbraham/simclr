@@ -225,15 +225,14 @@ class SupervisedHead(tf.keras.layers.Layer):
 class Model(tf.keras.models.Model):
   """Resnet model with projection or supervised layer."""
 
-  def __init__(self, num_classes, projection_head, **kwargs):
+  def __init__(self, num_classes, projection_head, supervised_head, **kwargs):
     super(Model, self).__init__(**kwargs)
     self.resnet_model = resnet.resnet(
         resnet_depth=FLAGS.resnet_depth,
         width_multiplier=FLAGS.width_multiplier,
         cifar_stem=FLAGS.image_size <= 32)
     self._projection_head = projection_head
-    if FLAGS.train_mode == 'finetune' or FLAGS.lineareval_while_pretraining:
-      self.supervised_head = SupervisedHead(num_classes)
+    self.supervised_head = supervised_head
 
   def __call__(self, inputs, training):
     features = inputs

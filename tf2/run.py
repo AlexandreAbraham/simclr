@@ -523,12 +523,13 @@ def main(argv):
 
   with strategy.scope():
 
-    projection_head = model_lib.NonLinearProjectionHead
+    projection_head = model_lib.NonLinearProjectionHead(
       FLAGS.num_proj_layers,
       FLAGS.proj_out_dim,
     ) 
+    supervised_head = model_lib.SupervisedHead(num_classes)
 
-    model = model_lib.Model(num_classes, projection_head)
+    model = model_lib.Model(num_classes, projection_head, supervised_head)
 
   if FLAGS.mode == 'eval':
     for ckpt in tf.train.checkpoints_iterator(
