@@ -26,13 +26,13 @@ import tensorflow.compat.v2 as tf
 FLAGS = flags.FLAGS
 
 
-def build_optimizer(learning_rate):
+def build_optimizer(learning_rate, optimizer='lars'):
   """Returns the optimizer."""
-  if FLAGS.optimizer == 'momentum':
+  if optimizer == 'momentum':
     return tf.keras.optimizers.SGD(learning_rate, FLAGS.momentum, nesterov=True)
-  elif FLAGS.optimizer == 'adam':
+  elif optimizer == 'adam':
     return tf.keras.optimizers.Adam(learning_rate)
-  elif FLAGS.optimizer == 'lars':
+  elif optimizer == 'lars':
     return lars_optimizer.LARSOptimizer(
         learning_rate,
         momentum=FLAGS.momentum,
@@ -41,7 +41,7 @@ def build_optimizer(learning_rate):
             'batch_normalization', 'bias', 'head_supervised'
         ])
   else:
-    raise ValueError('Unknown optimizer {}'.format(FLAGS.optimizer))
+    raise ValueError('Unknown optimizer {}'.format(optimizer))
 
 
 def add_weight_decay(model, adjust_per_optimizer=True):
@@ -69,19 +69,14 @@ def add_weight_decay(model, adjust_per_optimizer=True):
   return loss
 
 
-def get_train_steps(num_examples):
-  """Determine the number of training steps."""
-  return FLAGS.train_steps or (
-      num_examples * FLAGS.train_epochs // FLAGS.train_batch_size + 1)
-
-
 class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
   """Applies a warmup schedule on a given learning rate decay schedule."""
 
-  def __init__(self, base_learning_rate, num_examples, name=None):
+  def __init__(self, base_learning_rate, num_examples, total_steps, name=None):
     super(WarmUpAndCosineDecay, self).__init__()
     self.base_learning_rate = base_learning_rate
     self.num_examples = num_examples
+    self.total_steps = total_steps
     self._name = name
 
   def __call__(self, step):
@@ -100,10 +95,9 @@ class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
           step / float(warmup_steps) * scaled_lr if warmup_steps else scaled_lr)
 
       # Cosine decay learning rate schedule
-      total_steps = get_train_steps(self.num_examples)
       # TODO(srbs): Cache this object.
       cosine_decay = tf.keras.experimental.CosineDecay(
-          scaled_lr, total_steps - warmup_steps)
+          scaled_lr, self.total_steps - warmup_steps)
       learning_rate = tf.where(step < warmup_steps, learning_rate,
                                cosine_decay(step - warmup_steps))
 

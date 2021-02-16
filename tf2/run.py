@@ -471,7 +471,7 @@ def main(argv):
   num_eval_examples = builder.info.splits[FLAGS.eval_split].num_examples
   num_classes = builder.info.features['label'].num_classes
 
-  train_steps = model_lib.get_train_steps(num_train_examples)
+  train_steps = FLAGS.train_steps or (num_train_examples * FLAGS.train_epochs // FLAGS.train_batch_size + 1)
   eval_steps = FLAGS.eval_steps or int(
       math.ceil(num_eval_examples / FLAGS.eval_batch_size))
   epoch_steps = int(round(num_train_examples / FLAGS.train_batch_size))
@@ -525,7 +525,7 @@ def main(argv):
       # Build LR schedule and optimizer.
       learning_rate = model_lib.WarmUpAndCosineDecay(FLAGS.learning_rate,
                                                      num_train_examples)
-      optimizer = model_lib.build_optimizer(learning_rate)
+      optimizer = model_lib.build_optimizer(learning_rate, optimizer=FLAGS.optimizer)
 
       # Build metrics.
       all_metrics = []  # For summaries.
