@@ -15,11 +15,7 @@
 # ==============================================================================
 """Contrastive loss functions."""
 
-from absl import flags
-
 import tensorflow.compat.v2 as tf
-
-FLAGS = flags.FLAGS
 
 LARGE_NUM = 1e9
 

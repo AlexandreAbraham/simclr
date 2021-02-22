@@ -522,20 +522,34 @@ class BlockGroup(tf.keras.layers.Layer):  # pylint: disable=missing-docstring
 
   def call(self, inputs, training):
     for layer in self.layers:
-      inputs = layer(inputs, training=training)
+      inputs = layer(inputs, training=(training and self.trainable))
     return tf.identity(inputs, self._name)
 
 
 class BaseModel(tf.keras.layers.Layer):
-  pass
+  def set_trainable(self, level):
+    # -1: All the network is trainable
+    # 0: Not trainable
+    # 1 : 1st level of trainability
+    # ...
+    raise NotImplemented
 
 
 class Resnet(BaseModel):  # pylint: disable=missing-docstring
+
+  def set_trainable(self, level):
+    # Set everything to False or True to start
+    trainable = (level == -1)
+    for layer in self.initial_conv_relu_max_pool:
+      layer.trainable
+
+    for i, layer in enumerate(self.block_groups):
 
   def __init__(self,
                block_fn,
                layers,
                width_multiplier,
+               trainable=True,
                cifar_stem=False,
                data_format='channels_last',
                dropblock_keep_probs=None,
@@ -549,8 +563,6 @@ class Resnet(BaseModel):  # pylint: disable=missing-docstring
                       list) or len(dropblock_keep_probs) != 4:
       raise ValueError('dropblock_keep_probs is not valid:',
                        dropblock_keep_probs)
-    trainable = (
-        FLAGS.train_mode != 'finetune' or FLAGS.fine_tune_after_block == -1)
     self.initial_conv_relu_max_pool = []
     if cifar_stem:
       self.initial_conv_relu_max_pool.append(
